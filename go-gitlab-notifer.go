@@ -64,9 +64,12 @@ func main() {
 		{
 			Name:      "tick",
 			ShortName: "t",
-			Usage:     "my activity list 60 seconds tick",
-			Action: func(_ *cli.Context) {
-				tickGitlabActivity(gitlab)
+			Usage:     "my activity list N seconds tick",
+			Flags: []cli.Flag{
+				cli.IntFlag{"second", 60, "second N."},
+			},
+			Action: func(c *cli.Context) {
+				tickGitlabActivity(gitlab, c.Int("second"))
 			},
 		},
 		{
