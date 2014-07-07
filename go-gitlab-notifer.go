@@ -77,8 +77,12 @@ func main() {
 			Name:      "events",
 			ShortName: "e",
 			Usage:     "chice project events",
-			Action: func(_ *cli.Context) {
-				getProjectIssues(gitlab, 106)
+			Flags: []cli.Flag{
+				cli.IntFlag{"project-id", 1, "projectId."},
+			},
+			Action: func(c *cli.Context) {
+				getProjectIssues(gitlab, c.Int("project-id"))
+			},
 			},
 		},
 	}
