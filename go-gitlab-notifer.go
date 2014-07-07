@@ -83,6 +83,16 @@ func main() {
 			Action: func(c *cli.Context) {
 				getProjectIssues(gitlab, c.Int("project-id"))
 			},
+		},
+		{
+			Name:      "project_issue",
+			ShortName: "pi",
+			Usage:     "project issue list",
+			Flags: []cli.Flag{
+				cli.IntFlag{"project-id", 1, "projectId."},
+			},
+			Action: func(c *cli.Context) {
+				printGitlabProjectIssues(gitlab, c.Int("project-id"))
 			},
 		},
 	}
@@ -148,9 +158,9 @@ func getProjectIssues(gitlab *gogitlab.Gitlab, projectId int) {
 //	}
 }
 
-func tickGitlabActivity(gitlab *gogitlab.Gitlab) {
+func tickGitlabActivity(gitlab *gogitlab.Gitlab, tickSecond int) {
 
-	ch := time.Tick(60 * time.Second)
+	ch := time.Tick(time.Second * time.Duration(10))
 
 	lastedFeed, err := gitlab.Activity()
 	if err != nil {
@@ -216,6 +226,31 @@ func printGitlabIssues(gitlab *gogitlab.Gitlab) {
 
 	for _, issue := range issues {
 		fmt.Printf("[%4d] [%s]\n", issue.Id, issue.Title)
+	}
+}
+
+func printGitlabProjectIssues(gitlab *gogitlab.Gitlab, projectId int) {
+
+	page := 1
+	for {
+		issues, err := gitlab.ProjectIssues(projectId, page)
+		if err != nil {
+			log.Fatal(err.Error())
+			return
+		}
+		if len(issues) == 0 {
+			break
+		}
+
+		for _, issue := range issues {
+			if issue.State == "closed" {
+				color.Printf("@r[%4d(%d)] [%s] %s state=%s\n", issue.Id, issue.LocalId, issue.Title, issue.Description, issue.State)
+			} else {
+				color.Printf("@g[%4d(%d)] [%s] %s state=%s\n", issue.Id, issue.LocalId, issue.Title, issue.Description, issue.State)
+			}
+		}
+
+		page++
 	}
 }
 
@@ -303,9 +338,9 @@ func readGitlabAccessTokenJson() GitlabAccessConfig {
 		os.Exit(1)
 	}
 
-	file, e := ioutil.ReadFile(usr.HomeDir + "/.ggn/config.json")
-	if e != nil {
-		log.Fatal("Config file error: %v\n", e)
+	file, err := ioutil.ReadFile(usr.HomeDir + "/.ggn/config.json")
+	if err != nil {
+		log.Fatalf("Config file error: %v\n", err)
 		os.Exit(1)
 	}
 
